@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Blogs</h2>
+    <form method="GET" action="{{url_for('blog_display')}}">
+        <input type="text" name="query" placeholder="Search for blogs or tags">
+        <button type="Submit">Search</button>
+    </form>
+    {% if blogs %}
+        {% for blog in blogs %}
+            <section>
+                <hr>
+                <h2>
+                    {{ blog.BlogName }}
+                </h2>
+                <ul>
+                    <li><h3> Written by Nova </h3></li>
+                </ul>
+                <h3> Relevant Topics:</h3>
+                {% for categoryship in blog.categoryships %}
+                    <ul>
+                        <li>{{ categoryship.category.CategoryName }}</li>
+                    </ul>
+                {% endfor %}
+                <p>{{ blog.BlogContents }}</p>
+                <h3>Comments</h3>
+                <ul>
+                    {% if current_user.is_authenticated %}
+                        <form method="POST" action="{{url_for('blog_display', query=request.args.get('query'))}}">
+                            <strong>Comment as {{ current_user.Username }}:</strong>
+                            <br>
+                            <input type="hidden" name="BlogID" value="{{blog.BlogID}}">
+                            <textarea name="content" required></textarea>
+                            <br>
+                            <button type="submit">Add Comment</button>
+                        </form>
+                    {% else %}
+                        <li>You must <a href="{{url_for('login')}}">login</a> to comment.</li>
+                    {% endif %}
+                    <br>
+                {% for comment in blog.comments %}
+                    <li>
+                        <strong>{{ comment.user.Username }}</strong>:
+
+                        {% if current_user.is_authenticated and comment.UserID == current_user.id %}
+                            {% if edit_id == comment.CommentID %}
+                                <!-- Edit form -->
+                                <form method="POST" action="{{ url_for('edit_comment', comment_id=comment.CommentID) }}">
+                                    <textarea name="content">{{ comment.CommentContents }}</textarea>
+                                    <button type="submit">Save</button>
+                                    <a href="{{ url_for('blog_display', query=request.args.get('query')) }}">Cancel</a>
+                                </form>
+                            {% else %}
+                                <!-- Normal display with edit/delete buttons -->
+                                {{ comment.CommentContents }}
+                                <a href="{{ url_for('blog_display', query=request.args.get('query'), edit_id=comment.CommentID) }}">Edit</a>
+                            {% endif %}
+                            
+                            {% if current_user.is_authenticated and (comment.UserID == current_user.id or current_user.IsAdmin) %}
+                                <!-- Delete button always shown next to edit -->
+                                <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.CommentID) }}" style="display:inline;">
+                                    <button type="submit">Delete</button>
+                                </form>
+                            {% else %}
+                                {{ comment.CommentContents }}
+                            {% endif %}
+                        {% endif %}
+                    </li>
+                {% endfor %}
+                </ul>
+                <hr>
+            </section>
+        {% endfor %}
+    {% endif %}
+{% endblock %}

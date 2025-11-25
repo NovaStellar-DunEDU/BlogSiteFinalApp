@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Add A Category</h2>
+    <form method="post" id="categoryForm">
+        <label>Make a Category</label>
+        <br>
+        <input type="text" name="categoryName">
+        <br>
+        <button type="submit" name="submit_category">Submit Category</button>
+        <br>
+    </form>
+        <br>
+        <hr>
+        <h2>Add A Blog</h2>
+    <form method="post" id="blogForm">
+        <label>Blog Name:</label>
+            <br>
+            <input type="text" name="blogname">
+            <br>
+            <br>
+        <label>Blog Contents:</label>
+            <br>
+            <input type="text" name="blogcontents">
+            <br>
+            <br>
+            <label>Select Relevant Categories, the content will be listed below:</label>
+            {% for category in categories %}
+                <br>
+                <input type="checkbox" name="categoryID" value="{{ category.CategoryID }}"> {{ category.CategoryName }} </option>
+            {% endfor %}
+        <br>
+        <button type="submit" name="submit_blog">Create Blog</button>
+    </form>
+{% endblock %}
