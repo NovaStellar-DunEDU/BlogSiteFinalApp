@@ -23,12 +23,25 @@ def load_user(user_id):
 
 # Database Models for Blogs, Comments, Users, Projects, Categories
 
+class AboutMe(db.Model):
+    ProfileID = db.Column(db.Integer, primary_key=True)
+    UserID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    PictureID = db.Column(db.Integer, db.ForeignKey('pictures.PictureID'), default="")
+    Description = db.Column(db.String, nullable=False)
+
+class Pictures(db.Model):
+    PictureID = db.Column(db.Integer, primary_key=True)
+    FileNamePFP = db.Column(db.String, nullable=False)
+    UserID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    aboutme = db.relationship('AboutMe', backref='pictures', lazy=True)
+
 class Users(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     Username = db.Column(db.String(100), unique=True, nullable=False)
     Password = db.Column(db.String(100), nullable= False)
     is_admin = db.Column(db.Boolean, default=False)
     comments = db.relationship('Comments', backref='user', lazy=True)
+    aboutme = db.relationship('AboutMe', backref='user', lazy=True)
 
 class Comments(db.Model):
     CommentID = db.Column(db.Integer, primary_key=True)
@@ -38,7 +51,7 @@ class Comments(db.Model):
 
 class BlogImage(db.Model):
     ImageID = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String, nullable=False)
+    filename = db.Column(db.String, nullable=True)
     BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID'), nullable=False)
 
 class Blogs(db.Model):
@@ -62,8 +75,15 @@ class Categoryship(db.Model):
 # Database end
 
 @app.route('/')
-def about_me():
-    return render_template('about_me.html')
+def default():
+    return render_template('default.html')
+
+@app.route('/aboutme/<username>')
+@login_required
+def about_me(username):
+    user = Users.query.filter_by(Username=username).first_or_404()
+    aboutme = AboutMe.query.filter_by(UserID=user.id).order_by(AboutMe.ProfileID.desc()).first()
+    return render_template('about_me.html', user=user, aboutme=aboutme)
 
 @app.route('/blog/add', methods=['GET', 'POST'])
 def add_blog():
@@ -111,7 +131,10 @@ def add_blog():
                             BlogID=new_blog.BlogID,
                             filename=filename
                         )
-                    db.session.add(new_image)
+                        db.session.add(new_image)
+                    else:
+                        print("Skip empty file input")
+                
                 db.session.commit()
 
                 selected_ids = request.form.getlist('categoryID')
@@ -266,6 +289,27 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))  # or redirect to homepage
 
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if not current_user.is_admin:
+        abort(403)
+
+    if request.method == 'POST':
+        if 'submit_settings' in request.form:
+            desc = request.form.get('Description')
+            aboutme = AboutMe.query.filter_by(UserID=current_user.id).first()
+            if desc:
+                newAboutMe = AboutMe(
+                    UserID=current_user.id,
+                    PictureID = None,
+                    Description = desc
+                )
+                db.session.add(newAboutMe)
+                db.session.commit()
+            return redirect(url_for('settings'))
+    aboutme = AboutMe.query.filter_by(UserID=current_user.id).first()
+    return render_template('settings.html', aboutme=aboutme)
 
 # Create DB if not exists
 with app.app_context():

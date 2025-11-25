@@ -5,6 +5,7 @@
         <input type="text" name="query" placeholder="Search for blogs or tags">
         <button type="Submit">Search</button>
     </form>
+    <br>
     {% if blogs %}
         {% for blog in blogs %}
             <section>
@@ -26,6 +27,9 @@
                     <img src="{{ url_for('static', filename='uploads/' ~ image.filename) }}" alt="Blog Image"
                     style="max-width:300px; height:auto; margin:10px;">
                 {% endfor %}
+                {%if not image%}
+                    <p>No images for this post.</p>
+                {%endif%}
                 <h3>Blog Contents:</h3>
                 <p>{{ blog.BlogContents }}</p>
                 <h3>Comments</h3>

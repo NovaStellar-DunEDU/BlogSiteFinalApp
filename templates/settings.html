@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Settings</h2>
+    <form method = 'POST' id='settingsForm'>
+        <label>Profile Picture:</label>
+            <br>
+            <input type="file" id="fileInput" name="fileInput" accept="image/*" multiple>
+            <div id="previewContainer"></div>
+            <br>
+        <label>Write your About Me:</label>
+            <br>
+            <textarea name="Description">{{ aboutme.Description if aboutme else '' }}</textarea>
+            <br>
+        <button type="submit" name="submit_settings">Submit all Changes to Settings</button>
+    </form>
+{% endblock %}

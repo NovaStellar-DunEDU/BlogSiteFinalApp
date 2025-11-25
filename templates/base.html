@@ -1,17 +1,21 @@
 <!DOCTYPE html>
     <html lang="en">
         <head>
-            <title>NovaSaizah's Portfolio and Blog</title>
+            <title>Blogfolio</title>
             <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
             {% block scripts %} {% endblock %}
         </head>
         <body>
             <header>
                 <nav>
-                    <a href="{{url_for('about_me')}}">Home Page</a> |
+                    <a href="{{url_for('default')}}">Default Page</a> |
                     {% if not current_user.is_authenticated %}
                     <a href="{{ url_for('sign_up') }}">Sign Up</a> |
                     <a href="{{url_for('login')}}">Login</a> |
+                    {% endif %}
+                    {% if current_user.is_authenticated %}
+                        <a href="{{url_for('about_me', username=current_user.Username)}}">Home Page</a> |
+                        <a href="{{ url_for('settings') }}">Settings</a> |
                     {% endif %}
                     {% if current_user.is_authenticated and current_user.is_admin %}
                         <a href="{{ url_for('add_blog') }}">Add Blog (DEBUG)</a> |
@@ -23,7 +27,7 @@
                     <p>You are currently logged in as: {{current_user.Username}}</p>
                     <a href="{{ url_for('logout') }}">Log Off?</a>
                 {% endif %}
-                <h1>NovaSaizah's Portfolio and Blog</h1>
+                <h1>Blogfolio</h1>
             </header>
             <main>
                 {% block content %}{% endblock %}
