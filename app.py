@@ -266,32 +266,6 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))  # or redirect to homepage
 
-# Temporary
-
-@app.route('/test-upload', methods=['GET', 'POST'])
-def test_upload():
-    if request.method == 'POST':
-        file = request.files.get('file')
-        if file and file.filename:
-            from werkzeug.utils import secure_filename
-            import os
-            upload_folder = os.path.join(app.root_path, 'static', 'uploads')
-            os.makedirs(upload_folder, exist_ok=True)
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(upload_folder, filename)
-            try:
-                file.save(filepath)
-                return f"Saved to {filepath}"
-            except Exception as e:
-                return f"Error: {e}"
-        return "No file received"
-    return '''
-        <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="file">
-            <input type="submit">
-        </form>
-    '''
-
 
 # Create DB if not exists
 with app.app_context():
