@@ -2,12 +2,15 @@ from flask import Flask, flash, render_template, request, redirect, url_for, abo
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, current_user, login_required, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blogSite.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_super_secret_key_here'
+UPLOAD_FOLDER = 'static/uploads'
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
@@ -33,12 +36,18 @@ class Comments(db.Model):
     UserID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID'), nullable=False)
 
+class BlogImage(db.Model):
+    ImageID = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String, nullable=False)
+    BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID'), nullable=False)
+
 class Blogs(db.Model):
     BlogID = db.Column(db.Integer, primary_key=True)
     BlogName = db.Column(db.String(100), nullable=False)
     BlogContents = db.Column(db.String, nullable=False)
     categoryships = db.relationship('Categoryship', backref='blog', lazy=True)
     comments = db.relationship('Comments', backref='blog', lazy=True)
+    image_paths = db.relationship('BlogImage', backref='blog', lazy=True)
 
 class Categories(db.Model):
     CategoryID = db.Column(db.Integer, primary_key=True)
@@ -50,12 +59,16 @@ class Categoryship(db.Model):
     BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID'), nullable=False)
     CategoryID = db.Column(db.Integer, db.ForeignKey('categories.CategoryID'), nullable=False)
 
+# Database end
+
 @app.route('/')
 def about_me():
     return render_template('about_me.html')
 
 @app.route('/blog/add', methods=['GET', 'POST'])
 def add_blog():
+    uploaded_filenames = []
+    categories_all = Categories.query.all()
     if not current_user.is_authenticated or not current_user.is_admin:
         abort(403)
     else:
@@ -68,27 +81,51 @@ def add_blog():
                     )
                     db.session.add(new_category)
                     db.session.commit()
-                    return redirect(url_for('add_blog'))
+                    
+                    categories_all = Categories.query.all()
+                    return render_template('add_blog.html', categories=categories_all, previews=uploaded_filenames)
             
             elif 'submit_blog' in request.form:
                 new_blog = Blogs(
                     BlogName=request.form['blogname'],
                     BlogContents=request.form['blogcontents'],
-                )
+                    )
                 db.session.add(new_blog)
                 db.session.commit()
-            
+
+                files = request.files.getlist('fileInput')
+                os.makedirs('static/uploads', exist_ok=True)
+                for file in files:
+                    if file and file.filename:
+                        filename = secure_filename(file.filename)
+                        upload_folder = os.path.join(app.root_path, 'static', 'uploads')
+                        os.makedirs(upload_folder, exist_ok=True)
+                        filepath = os.path.join(upload_folder, filename)
+                        try:
+                            file.save(filepath)
+                        except Exception as e:
+                            print("File save error:", e)
+                        uploaded_filenames.append(filename)
+
+                        new_image = BlogImage(
+                            BlogID=new_blog.BlogID,
+                            filename=filename
+                        )
+                    db.session.add(new_image)
+                db.session.commit()
+
                 selected_ids = request.form.getlist('categoryID')
                 for category_id in selected_ids:
                     new_categoryship = Categoryship(
-                        BlogID = new_blog.BlogID,
-                        CategoryID = int(category_id)
+                        BlogID=new_blog.BlogID,
+                        CategoryID=int(category_id)
                     )
                     db.session.add(new_categoryship)
                 db.session.commit()
-            return redirect(url_for('add_blog'))
-        categories = Categories.query.all()
-        return render_template('add_blog.html', categories=categories)
+                
+                return render_template('add_blog.html', categories=categories_all, previews=uploaded_filenames)
+        return render_template('add_blog.html', categories=categories_all)
+
 
 @app.route('/blogs/view', methods=['GET','POST'])
 def blog_display():
@@ -210,7 +247,7 @@ def sign_up():
         existing_user = Users.query.filter_by(Username=Username).first()
         if existing_user:
             flash('Username already taken.', 'warning')
-            return redirect(url_for('signup'))
+            return redirect(url_for('sign_up'))
 
         hashed_pw = generate_password_hash(Password)
         new_user = Users(Username=Username, Password=hashed_pw)
@@ -228,6 +265,33 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))  # or redirect to homepage
+
+# Temporary
+
+@app.route('/test-upload', methods=['GET', 'POST'])
+def test_upload():
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if file and file.filename:
+            from werkzeug.utils import secure_filename
+            import os
+            upload_folder = os.path.join(app.root_path, 'static', 'uploads')
+            os.makedirs(upload_folder, exist_ok=True)
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(upload_folder, filename)
+            try:
+                file.save(filepath)
+                return f"Saved to {filepath}"
+            except Exception as e:
+                return f"Error: {e}"
+        return "No file received"
+    return '''
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="file">
+            <input type="submit">
+        </form>
+    '''
+
 
 # Create DB if not exists
 with app.app_context():

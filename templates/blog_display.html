@@ -15,12 +15,18 @@
                 <ul>
                     <li><h3> Written by Nova </h3></li>
                 </ul>
-                <h3> Relevant Topics:</h3>
+                <h3>Relevant Topics:</h3>
                 {% for categoryship in blog.categoryships %}
                     <ul>
                         <li>{{ categoryship.category.CategoryName }}</li>
                     </ul>
                 {% endfor %}
+                <h3>Images:</h3>
+                {% for image in blog.image_paths %}
+                    <img src="{{ url_for('static', filename='uploads/' ~ image.filename) }}" alt="Blog Image"
+                    style="max-width:300px; height:auto; margin:10px;">
+                {% endfor %}
+                <h3>Blog Contents:</h3>
                 <p>{{ blog.BlogContents }}</p>
                 <h3>Comments</h3>
                 <ul>
@@ -34,10 +40,11 @@
                             <button type="submit">Add Comment</button>
                         </form>
                     {% else %}
-                        <li>You must <a href="{{url_for('login')}}">login</a> to comment.</li>
+                        <li>You must <a href="{{url_for('login')}}">login</a> to comment and see comments.</li>
                     {% endif %}
                     <br>
                 {% for comment in blog.comments %}
+                    {%if current_user.is_authenticated%}
                     <li>
                         <strong>{{ comment.user.Username }}</strong>:
 
@@ -64,6 +71,7 @@
                                 {{ comment.CommentContents }}
                             {% endif %}
                         {% endif %}
+                    {%endif%}
                     </li>
                 {% endfor %}
                 </ul>

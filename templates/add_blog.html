@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% endblock %}
 {% block content %}
     <h2>Add A Category</h2>
     <form method="post" id="categoryForm">
@@ -6,21 +9,27 @@
         <br>
         <input type="text" name="categoryName">
         <br>
+        <br>
         <button type="submit" name="submit_category">Submit Category</button>
         <br>
     </form>
         <br>
         <hr>
         <h2>Add A Blog</h2>
-    <form method="post" id="blogForm">
+    <form method="post" id="blogForm" enctype="multipart/form-data">
         <label>Blog Name:</label>
             <br>
             <input type="text" name="blogname">
             <br>
             <br>
+        <label>Images to Blog:</label>
+            <br>
+            <input type="file" id="fileInput" name="fileInput" accept="image/*" multiple>
+            <div id="previewContainer"></div>
+            <br>
         <label>Blog Contents:</label>
             <br>
-            <input type="text" name="blogcontents">
+            <textarea name="blogcontents"></textarea>
             <br>
             <br>
             <label>Select Relevant Categories, the content will be listed below:</label>
@@ -28,6 +37,7 @@
                 <br>
                 <input type="checkbox" name="categoryID" value="{{ category.CategoryID }}"> {{ category.CategoryName }} </option>
             {% endfor %}
+        <br>
         <br>
         <button type="submit" name="submit_blog">Create Blog</button>
     </form>
