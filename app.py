@@ -27,7 +27,7 @@ class AboutMe(db.Model):
     ProfileID = db.Column(db.Integer, primary_key=True)
     UserID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     PictureID = db.Column(db.Integer, db.ForeignKey('pictures.PictureID'), default="")
-    Description = db.Column(db.String, nullable=False)
+    Description = db.Column(db.Text, nullable=False)
 
 class Pictures(db.Model):
     PictureID = db.Column(db.Integer, primary_key=True)
