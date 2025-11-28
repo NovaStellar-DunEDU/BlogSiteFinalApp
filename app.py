@@ -4,6 +4,15 @@ from flask_login import LoginManager, UserMixin, login_user, current_user, login
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 import os
+from datetime import datetime
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 app = Flask(__name__)
 
@@ -40,27 +49,31 @@ class Users(db.Model, UserMixin):
     Username = db.Column(db.String(100), unique=True, nullable=False)
     Password = db.Column(db.String(100), nullable= False)
     is_admin = db.Column(db.Boolean, default=False)
-    comments = db.relationship('Comments', backref='user', lazy=True)
+    comments = db.relationship('Comments', backref='user', lazy=True, cascade='all, delete-orphan', passive_deletes=True)
     aboutme = db.relationship('AboutMe', backref='user', lazy=True)
+    blogs = db.relationship('Blogs', backref='user', lazy=True, cascade='all, delete-orphan', passive_deletes=True)
 
 class Comments(db.Model):
     CommentID = db.Column(db.Integer, primary_key=True)
     CommentContents = db.Column(db.Text, nullable=False)
     UserID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID'), nullable=False)
+    BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID', ondelete='CASCADE'), nullable=False)
 
 class BlogImage(db.Model):
     ImageID = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String, nullable=True)
-    BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID'), nullable=False)
+    BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID', ondelete='CASCADE'), nullable=False)
 
 class Blogs(db.Model):
     BlogID = db.Column(db.Integer, primary_key=True)
     BlogName = db.Column(db.String(100), nullable=False)
     BlogContents = db.Column(db.String, nullable=False)
-    categoryships = db.relationship('Categoryship', backref='blog', lazy=True)
-    comments = db.relationship('Comments', backref='blog', lazy=True)
-    image_paths = db.relationship('BlogImage', backref='blog', lazy=True)
+    Timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    UserID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    author = db.relationship('Users', backref='blog', foreign_keys=[UserID])
+    categoryships = db.relationship('Categoryship', backref='blog', lazy=True, cascade='all, delete-orphan', passive_deletes=True)
+    comments = db.relationship('Comments', backref='blog', lazy=True, cascade='all, delete-orphan', passive_deletes=True)
+    image_paths = db.relationship('BlogImage', backref='blog', lazy=True, cascade='all, delete-orphan', passive_deletes=True)
 
 class Categories(db.Model):
     CategoryID = db.Column(db.Integer, primary_key=True)
@@ -69,7 +82,7 @@ class Categories(db.Model):
 
 class Categoryship(db.Model):
     CategoryshipID = db.Column(db.Integer, primary_key=True)
-    BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID'), nullable=False)
+    BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID', ondelete='CASCADE'), nullable=False)
     CategoryID = db.Column(db.Integer, db.ForeignKey('categories.CategoryID'), nullable=False)
 
 # Database end
@@ -83,7 +96,8 @@ def default():
 def about_me(username):
     user = Users.query.filter_by(Username=username).first_or_404()
     aboutme = AboutMe.query.filter_by(UserID=user.id).order_by(AboutMe.ProfileID.desc()).first()
-    return render_template('about_me.html', user=user, aboutme=aboutme)
+    blogs = Blogs.query.filter_by(UserID=user.id).order_by(Blogs.Timestamp.desc()).all()
+    return render_template('about_me.html', user=user, aboutme=aboutme, blogs=blogs)
 
 @app.route('/blog/add', methods=['GET', 'POST'])
 def add_blog():
@@ -109,6 +123,7 @@ def add_blog():
                 new_blog = Blogs(
                     BlogName=request.form['blogname'],
                     BlogContents=request.form['blogcontents'],
+                    UserID=current_user.id
                     )
                 db.session.add(new_blog)
                 db.session.commit()
@@ -212,6 +227,32 @@ def blogs_display():
     blogs = Blogs.query.get_or_404(id)
     return render_template('blog_display.html', blogs=[blogs])
 
+@app.route('/blogs/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_blog(id):
+    blog = Blogs.query.get_or_404(id)
+    if blog.UserID != current_user.id and not current_user.is_admin:
+        abort(403)
+    if request.method == 'POST':
+        blog.Title = request.form['title']
+        blog.Content = request.form['content']
+        db.session.commit()
+        return redirect(url_for('profile', username=current_user.Username))
+    return render_template('edit_blog.html', blog=blog)
+
+@app.route('/blogs/<int:id>/delete', methods=['POST'])
+@login_required
+def delete_blog(id):
+    blog = Blogs.query.get_or_404(id)
+    if blog.UserID == current_user.id or current_user.IsAdmin:
+        db.session.delete(blog)
+        db.session.commit()
+        flash('Blog Deleted.', 'success')
+    else:
+        flash('You are not authorized to delete this blog.', 'danger')
+    
+    return redirect(url_for('about_me', username=current_user.Username))
+
 @app.route('/comment/<int:comment_id>/delete', methods=['POST'])
 @login_required
 def delete_comment(comment_id):
@@ -298,7 +339,7 @@ def settings():
     if request.method == 'POST':
         if 'submit_settings' in request.form:
             desc = request.form.get('Description')
-            aboutme = AboutMe.query.filter_by(UserID=current_user.id).first()
+            aboutme = AboutMe.query.filter_by(UserID=current_user.id).order_by(AboutMe.ProfileID.desc()).first()
             if desc:
                 newAboutMe = AboutMe(
                     UserID=current_user.id,
@@ -308,7 +349,7 @@ def settings():
                 db.session.add(newAboutMe)
                 db.session.commit()
             return redirect(url_for('settings'))
-    aboutme = AboutMe.query.filter_by(UserID=current_user.id).first()
+    aboutme = AboutMe.query.filter_by(UserID=current_user.id).order_by(AboutMe.ProfileID.desc()).first()
     return render_template('settings.html', aboutme=aboutme)
 
 # Create DB if not exists

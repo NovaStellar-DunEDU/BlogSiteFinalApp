@@ -14,7 +14,7 @@
                     {{ blog.BlogName }}
                 </h2>
                 <ul>
-                    <li><h3> Written by Nova </h3></li>
+                    <li><h3>Written by <a href="{{ url_for('about_me', username=blog.author.Username) }}">{{ blog.author.Username }}</a></h3></li>
                 </ul>
                 <h3>Relevant Topics:</h3>
                 {% for categoryship in blog.categoryships %}
