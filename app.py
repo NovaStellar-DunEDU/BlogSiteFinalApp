@@ -35,7 +35,7 @@ def load_user(user_id):
 class AboutMe(db.Model):
     ProfileID = db.Column(db.Integer, primary_key=True)
     UserID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    PictureID = db.Column(db.Integer, db.ForeignKey('pictures.PictureID'), default="")
+    PictureID = db.Column(db.Integer, db.ForeignKey('pictures.PictureID'), nullable=True, default=None)
     Description = db.Column(db.Text, nullable=False)
 
 class Pictures(db.Model):
@@ -52,6 +52,7 @@ class Users(db.Model, UserMixin):
     comments = db.relationship('Comments', backref='user', lazy=True, cascade='all, delete-orphan', passive_deletes=True)
     aboutme = db.relationship('AboutMe', backref='user', lazy=True)
     blogs = db.relationship('Blogs', backref='user', lazy=True, cascade='all, delete-orphan', passive_deletes=True)
+    categories = db.relationship('Categories', backref='user', lazy=True)
 
 class Comments(db.Model):
     CommentID = db.Column(db.Integer, primary_key=True)
@@ -78,6 +79,7 @@ class Blogs(db.Model):
 class Categories(db.Model):
     CategoryID = db.Column(db.Integer, primary_key=True)
     CategoryName = db.Column(db.String(100), nullable=False)
+    UserID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     categoryships = db.relationship('Categoryship', backref='category', lazy=True)
 
 class Categoryship(db.Model):
@@ -95,74 +97,78 @@ def default():
 @login_required
 def about_me(username):
     user = Users.query.filter_by(Username=username).first_or_404()
+    picture = Pictures.query.filter_by(UserID=user.id).order_by(Pictures.PictureID.desc()).first()
     aboutme = AboutMe.query.filter_by(UserID=user.id).order_by(AboutMe.ProfileID.desc()).first()
     blogs = Blogs.query.filter_by(UserID=user.id).order_by(Blogs.Timestamp.desc()).all()
-    return render_template('about_me.html', user=user, aboutme=aboutme, blogs=blogs)
+    return render_template('about_me.html', user=user, aboutme=aboutme, blogs=blogs, picture=picture)
+
+@app.route('/aboutme/search/')
+def profile_search():
+    #be able to search up a username and access their profile.
+    
+    pass
 
 @app.route('/blog/add', methods=['GET', 'POST'])
+@login_required
 def add_blog():
     uploaded_filenames = []
     categories_all = Categories.query.all()
-    if not current_user.is_authenticated or not current_user.is_admin:
-        abort(403)
-    else:
-        if request.method == 'POST':
-            if 'submit_category' in request.form:
-                category_name = request.form.get('categoryName')
-                if category_name:
-                    new_category = Categories(
-                        CategoryName = category_name
-                    )
-                    db.session.add(new_category)
-                    db.session.commit()
-                    
-                    categories_all = Categories.query.all()
-                    return render_template('add_blog.html', categories=categories_all, previews=uploaded_filenames)
-            
-            elif 'submit_blog' in request.form:
-                new_blog = Blogs(
-                    BlogName=request.form['blogname'],
-                    BlogContents=request.form['blogcontents'],
-                    UserID=current_user.id
-                    )
-                db.session.add(new_blog)
-                db.session.commit()
-
-                files = request.files.getlist('fileInput')
-                os.makedirs('static/uploads', exist_ok=True)
-                for file in files:
-                    if file and file.filename:
-                        filename = secure_filename(file.filename)
-                        upload_folder = os.path.join(app.root_path, 'static', 'uploads')
-                        os.makedirs(upload_folder, exist_ok=True)
-                        filepath = os.path.join(upload_folder, filename)
-                        try:
-                            file.save(filepath)
-                        except Exception as e:
-                            print("File save error:", e)
-                        uploaded_filenames.append(filename)
-
-                        new_image = BlogImage(
-                            BlogID=new_blog.BlogID,
-                            filename=filename
-                        )
-                        db.session.add(new_image)
-                    else:
-                        print("Skip empty file input")
-                
-                db.session.commit()
-
-                selected_ids = request.form.getlist('categoryID')
-                for category_id in selected_ids:
-                    new_categoryship = Categoryship(
-                        BlogID=new_blog.BlogID,
-                        CategoryID=int(category_id)
-                    )
-                    db.session.add(new_categoryship)
-                db.session.commit()
-                
+    if request.method == 'POST':
+        if 'submit_category' in request.form:
+            category_name = request.form.get('categoryName')
+            if category_name:
+                new_category = Categories(
+                    UserID=current_user.id,
+                    CategoryName = category_name
+                )
+                db.session.add(new_category)
+                categories_all = Categories.query.all()
                 return render_template('add_blog.html', categories=categories_all, previews=uploaded_filenames)
-        return render_template('add_blog.html', categories=categories_all)
+            
+        elif 'submit_blog' in request.form:
+            new_blog = Blogs(
+                BlogName=request.form['blogname'],
+                BlogContents=request.form['blogcontents'],
+                UserID=current_user.id
+                )
+            db.session.add(new_blog)
+            db.session.commit()
+
+            files = request.files.getlist('fileInput')
+            os.makedirs('./static/uploads', exist_ok=True)
+            for file in files:
+                if file and file.filename:
+                    filename = secure_filename(file.filename)
+                    upload_folder = os.path.join(app.root_path, 'static', 'uploads')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    filepath = os.path.join(upload_folder, filename)
+                    try:
+                        file.save(filepath)
+                    except Exception as e:
+                        print("File save error:", e)
+                    uploaded_filenames.append(filename)
+
+                    new_image = BlogImage(
+                        BlogID=new_blog.BlogID,
+                        filename=filename
+                    )
+                    db.session.add(new_image)
+                else:
+                    print("Skip empty file input")
+                
+                db.session.commit()
+
+            selected_ids = request.form.getlist('categoryID')
+            for category_id in selected_ids:
+                new_categoryship = Categoryship(
+                    BlogID=new_blog.BlogID,
+                    CategoryID=int(category_id)
+                    )
+                db.session.add(new_categoryship)
+                db.session.commit()
+                
+            return render_template('add_blog.html', categories=categories_all, previews=uploaded_filenames)
+    return render_template('add_blog.html', categories=categories_all)
 
 
 @app.route('/blogs/view', methods=['GET','POST'])
@@ -333,24 +339,45 @@ def logout():
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
-    if not current_user.is_admin:
-        abort(403)
-
+    savedfiles = []
     if request.method == 'POST':
         if 'submit_settings' in request.form:
             desc = request.form.get('Description')
+            savedfiles = request.files['fileInput']
             aboutme = AboutMe.query.filter_by(UserID=current_user.id).order_by(AboutMe.ProfileID.desc()).first()
-            if desc:
-                newAboutMe = AboutMe(
+            os.makedirs('./static/profileuploads', exist_ok=True)
+            if savedfiles and savedfiles.filename:
+                FileNamePFP = secure_filename(savedfiles.filename)
+                upload_folder = os.path.join(app.root_path, 'static', 'profileuploads')
+                os.makedirs(upload_folder, exist_ok=True)
+                filepath = os.path.join(upload_folder, FileNamePFP)
+                try:
+                    savedfiles.save(filepath)
+                    print("Saved to file path:", filepath)
+                    upload_folder.append(FileNamePFP)
+                    savedfiles.append(FileNamePFP)
+                except Exception as e:
+                    print("File save error:", e)
+                print("Saved Files: ", savedfiles)
+                new_image = Pictures(
                     UserID=current_user.id,
-                    PictureID = None,
-                    Description = desc
+                    FileNamePFP=FileNamePFP
                 )
-                db.session.add(newAboutMe)
+                db.session.add(new_image)
                 db.session.commit()
-            return redirect(url_for('settings'))
+            else:
+                print("Skip empty file input")
+        if desc:
+            newAboutMe = AboutMe(
+                UserID=current_user.id,
+                Description = desc
+            )
+            db.session.add(newAboutMe)
+            db.session.commit()
+        return redirect(url_for('settings'))
+        
     aboutme = AboutMe.query.filter_by(UserID=current_user.id).order_by(AboutMe.ProfileID.desc()).first()
-    return render_template('settings.html', aboutme=aboutme)
+    return render_template('settings.html', aboutme=aboutme, savedfiles=savedfiles)
 
 # Create DB if not exists
 with app.app_context():

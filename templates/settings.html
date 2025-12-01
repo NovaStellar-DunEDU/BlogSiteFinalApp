@@ -1,10 +1,14 @@
 {% extends "base.html" %}
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% endblock %}
 {% block content %}
+    <hr>
     <h2>Settings</h2>
-    <form method = 'POST' id='settingsForm'>
+    <form method = 'POST' id='settingsForm' enctype="multipart/form-data">
         <label>Profile Picture:</label>
             <br>
-            <input type="file" id="fileInput" name="fileInput" accept="image/*" multiple>
+            <input type="file" id="fileInput" name="fileInput" accept="image/*">
             <div id="previewContainer"></div>
             <br>
         <label>Write your About Me:</label>
@@ -13,4 +17,6 @@
             <br>
         <button type="submit" name="submit_settings">Submit all Changes to Settings</button>
     </form>
+    <br>
+    <hr>
 {% endblock %}

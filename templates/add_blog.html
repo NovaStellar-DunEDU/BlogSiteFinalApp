@@ -3,6 +3,7 @@
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 {% endblock %}
 {% block content %}
+    <hr>
     <h2>Add A Category</h2>
     <form method="post" id="categoryForm">
         <label>Make a Category</label>
@@ -41,4 +42,6 @@
         <br>
         <button type="submit" name="submit_blog">Create Blog</button>
     </form>
+    <br>
+    <hr>
 {% endblock %}

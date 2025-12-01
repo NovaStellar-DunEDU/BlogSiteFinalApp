@@ -27,7 +27,7 @@
                     <img src="{{ url_for('static', filename='uploads/' ~ image.filename) }}" alt="Blog Image"
                     style="max-width:300px; height:auto; margin:10px;">
                 {% endfor %}
-                {%if not image%}
+                {%if not image in blog.image_paths%}
                     <p>No images for this post.</p>
                 {%endif%}
                 <h3>Blog Contents:</h3>
