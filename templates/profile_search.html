@@ -1,8 +1,13 @@
 {% extends "base.html" %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='/js/textbox.js') }}"></script>
+{% endblock %}
+
 {% block content %}
     <h2>Existing Users</h2>
     <form method="get" action="{{ url_for('profile_search') }}">
-        <input type="text" name="Usernames" placeholder="Search usernames..." value="{{ query }}">
+        <input type="text" name="Usernames" placeholder="Search usernames..." value="{{ query }}" class="autogrow">
         <button type="submit">Search</button>
     </form>
     <br>

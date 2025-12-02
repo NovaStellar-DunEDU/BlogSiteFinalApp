@@ -1,15 +1,22 @@
 {% extends "base.html" %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='/js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/textbox.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/textarea.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <h2>Edit Portfolio Entry</h2>
 <form method="POST" enctype="multipart/form-data">
     <label>Title:</label><br>
-    <input type="text" name="title" value="{{ portfolio.Title }}" required><br><br>
+    <input type="text" name="title" value="{{ portfolio.Title }}" class="autogrow" required><br><br>
 
     <label>Description:</label><br>
-    <textarea name="description" required>{{ portfolio.Description }}</textarea><br><br>
+    <textarea name="description" class="growtextarea" required>{{ portfolio.Description }}</textarea><br><br>
 
     <label>Code Snippet (optional):</label><br>
-    <textarea name="code" rows="10" cols="60">{{ portfolio.CodeSnippet }}</textarea><br><br>
+    <textarea name="code" rows="10" cols="60" class="growtextarea">{{ portfolio.CodeSnippet }}</textarea><br><br>
 
     <label>Image (optional):</label><br>
     {% if portfolio.ImagePath %}

@@ -1,17 +1,19 @@
 {% extends "base.html" %}
+
 {% block scripts %}
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/textbox.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/textarea.js') }}"></script>
 {% endblock %}
+
 {% block content %}
     <hr>
     <h2>Add A Category</h2>
     <form method="post" id="categoryForm">
-        <label>Make a Category</label>
-        <br>
-        <input type="text" name="categoryName">
+        <input type="text" name="categoryName" class="autogrow" placeholder="New Category">
         <br>
         <br>
-        <button type="submit" name="submit_category">Submit Category</button>
+        <button type="submit" name="submit_category">Create Category</button>
         <br>
     </form>
         <br>
@@ -20,17 +22,17 @@
     <form method="post" id="blogForm" enctype="multipart/form-data">
         <label>Blog Name:</label>
             <br>
-            <input type="text" name="blogname">
+            <input type="text" name="blogname" class="autogrow" placeholder="Name Your Blog">
             <br>
             <br>
-        <label>Images to Blog:</label>
+        <label>Add Images to Blog, Optional:</label>
             <br>
             <input type="file" id="fileInput" name="fileInput" accept="image/*" multiple>
             <div id="previewContainer"></div>
             <br>
         <label>Blog Contents:</label>
             <br>
-            <textarea name="blogcontents"></textarea>
+            <textarea name="blogcontents" class="growtextarea"></textarea>
             <br>
             <br>
             <label>Select Relevant Categories, the content will be listed below:</label>

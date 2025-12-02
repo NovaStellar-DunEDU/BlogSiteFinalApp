@@ -1,12 +1,17 @@
 {% extends "base.html" %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='/js/textbox.js') }}"></script>
+{% endblock %}
+
 {% block content %}
     <h2>Sign Up</h2>
     <form method="POST">
         <label for="username">Username:</label><br>
-        <input type="text" name="username" required><br><br>
+        <input type="text" name="username" class="autogrow" required><br><br>
 
         <label for="password">Password:</label><br>
-        <input type="password" name="password" required><br><br>
+        <input type="password" name="password" class="autogrow" required><br><br>
 
         <button type="submit">Create an Account</button>
     </form>

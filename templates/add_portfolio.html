@@ -1,16 +1,23 @@
 {% extends "base.html" %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='/js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/textbox.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/textarea.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <hr>
 <h2>Add Portfolio Entry</h2>
 <form method="POST" enctype="multipart/form-data">
     <label>Title:</label><br>
-    <input type="text" name="title" required><br><br>
+    <input type="text" name="title" class="autogrow" placeholder="New Title" required><br><br>
 
     <label>Description:</label><br>
-    <textarea name="description" required></textarea><br><br>
+    <textarea name="description" class="growtextarea" required></textarea><br><br>
 
     <label>Code Snippet (optional):</label><br>
-    <textarea name="code" rows="10" cols="60"></textarea><br><br>
+    <textarea name="code" rows="10" cols="60" class="growtextarea"></textarea><br><br>
 
     <label>Image (optional):</label><br>
     <input type="file" name="image"><br><br>

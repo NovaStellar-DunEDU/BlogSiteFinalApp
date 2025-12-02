@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='/js/textarea.js') }}"></script>
 {% endblock %}
 {% block content %}
     <hr>
@@ -13,7 +14,7 @@
             <br>
         <label>Write your About Me:</label>
             <br>
-            <textarea name="Description">{{ aboutme.Description if aboutme else '' }}</textarea>
+            <textarea name="Description" class="growtextarea">{{ aboutme.Description if aboutme else '' }}</textarea>
             <br>
         <button type="submit" name="submit_settings">Submit all Changes to Settings</button>
     </form>
