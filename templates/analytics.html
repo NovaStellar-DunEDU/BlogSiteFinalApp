@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% block content %}
     <h2>Analytics Dashboard</h2>
-    <p>For personal how-to, open XXAMP Control Panel, enable Apache and MySQL.</p>
+    <p>For personal how-to, open XXAMP Control Panel.</p>
+    <p>Edit Apache's ports to be 443, and 8080 for localhost. MySQL's port should be 3306.</p>
+    <p>Click the Start Button on Apache and MySQL.</p>
     <iframe src="http://localhost:8080/matomo/index.php?module=Widgetize&action=iframe&moduleToWidgetize=MultiSites&actionToWidgetize=standalone&idSite=1&period=week&date=yesterday&token_auth=d853af7b66e64e0e887239d54ee51738" frameborder="0" marginheight="0" marginwidth="0" width="100%" height="500px"></iframe>
 {% endblock %}

@@ -1,3 +1,39 @@
+@keyframes bounce{
+    0% {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pullIn{
+    0%{
+        opacity: 0;
+        transform: translateX(-200px);
+    }
+    100%{
+        opacity: 1;
+        transform: translateX(0px);
+    }
+}
+
+@keyframes pullOut{
+    0%{
+        opacity: 1;
+        transform: translateX(0px);
+    }
+    100%{
+        opacity: 0;
+        transform: translateX(-200px);
+    }
+}
+
 img{
     max-width: 300px;
     margin: 10px;
@@ -7,9 +43,10 @@ img{
 }
 
 code{
-    border:2px solid #444;
+    color: white;
+    background-color: #444;
+    border: 3px solid rgb(195, 195, 195);
     padding:4px;
-    margin:10px;
 }
 
 .autogrow{
@@ -19,9 +56,74 @@ code{
 }
 
 .growtextarea{
-    min-height: 80px;
-    max-height: 600px;
+    min-height: 30px;
+    max-height: 400px;
+    min-width: 180px;
+    max-width: 600px;
     resize: none;
     overflow: hidden;
-    transition: height 0.15s linear;
+    transition: width 0.2s ease, height 0.2s linear;
+}
+
+.blogs{
+    display:flexbox;
+    border: 2px solid #444;
+    background-color: #504e4e;
+    padding: 10px;
+    color: wheat;
+    width: fit-content;
+}
+
+body{
+    opacity: 0;
+    animation: bounce 0.9s forwards;
+    background-color:rgb(237, 222, 199);
+}
+
+.nav{
+    pointer-events: none;
+    position: fixed;
+    left: 0px;
+    background-color: #444;
+    padding: 20px;
+    width: 200px;
+    height: max-content;
+    z-index: 99999;
+}
+
+.nav.show{
+    animation: pullIn 1s forwards;
+    pointer-events: auto;
+}
+
+.nav.hide{
+    animation: pullOut 1s forwards;
+    pointer-events: none;
+}
+
+.ui{
+    border: 2px solid wheat;
+    padding: 10px;
+    background-color: wheat;
+    color: #444;
+    border-color: #444;
+    text-decoration: none;
+    display:flex;
+}
+
+.AboutMeCenter{
+    border: 2px solid #444;
+    padding: 10px;
+    text-align: center;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    background-color:wheat;
+    color:#444;
+}
+
+.PictureBox{
+    border: 2px solid #444;
+    background-color: #504e4e;
+    padding: 10px;
 }

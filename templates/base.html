@@ -3,33 +3,36 @@
         <head>
             <title>Blogfolio</title>
             <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
-            
+            <script src="{{ url_for('static', filename='js/menu.js') }}" defer></script>
+            <script src="{{ url_for('static', filename='js/matomo.js') }}"></script>
             {% block scripts %}
-                <script src="{{ url_for('static', filename='js/matomo.js') }}"></script>
             {% endblock %}
-            
+
         </head>
         <body>
             <header>
-                <nav>
-                    <a href="{{url_for('default')}}">Default Page</a> |
+                <br>
+                <button class="menu" id="menuToggle" aria-expanded="false" aria-controls="menuList">☰</button>
+                <nav id="nav" class="nav hide">
+                    <a href="{{url_for('default')}}" class="ui">Default Page</a>
                     {% if not current_user.is_authenticated %}
-                    <a href="{{ url_for('sign_up') }}">Sign Up</a> |
-                    <a href="{{url_for('login')}}">Login</a> |
+                    <a href="{{ url_for('sign_up') }}" class="ui">Sign Up</a>
+                    <a href="{{url_for('login')}}" class="ui">Login</a>
                     {% endif %}
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('about_me', username=current_user.Username)}}">Your Home Page</a> |
-                        <a href="{{ url_for('settings') }}">Settings</a> |
-                        <a href="{{ url_for('profile_search') }}">Search for Existing Users</a> |
-                        <a href="{{ url_for('add_portfolio') }}">Create a New Portfolio</a> |
-                        <a href="{{ url_for('add_blog') }}">Create a New Blog</a> |
+                        <a href="{{ url_for('about_me', username=current_user.Username)}}" class="ui">Your Home Page</a>
+                        <a href="{{ url_for('settings') }}" class="ui">Settings</a>
+                        <a href="{{ url_for('profile_search') }}" class="ui">Search for Existing Users</a>
+                        <a href="{{ url_for('add_portfolio') }}" class="ui">Create a New Portfolio</a>
+                        <a href="{{ url_for('add_blog') }}" class="ui">Create a New Blog</a>
                     {% endif %}
-                    <a href="{{ url_for('blog_display') }}">View Public Blogs</a> |
+                    <a href="{{ url_for('blog_display') }}" class="ui">View Public Blogs</a>
                     {% if current_user.is_authenticated and current_user.is_admin %}
-                        <a href="{{ url_for('analytics') }}">Analytics (DEBUG)</a> |
+                        <a href="{{ url_for('analytics') }}" class="ui">Analytics (DEBUG)</a>
                     {% endif %}
                 </nav>
                 {% if current_user.is_authenticated %}
+                    <br>
                     <p>You are currently logged in as: {{current_user.Username}}</p>
                     <a href="{{ url_for('logout') }}">Log Off?</a>
                 {% endif %}

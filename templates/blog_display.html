@@ -14,12 +14,11 @@
     <br>
     {% if blogs %}
         {% for blog in blogs %}
-            <section>
+            <section class="blogs">
                 <hr>
                 <h2>
                     {{ blog.BlogName }}
                 </h2>
-            </div>
                 <ul>
                     <li>
                         <h3>Written by <a href="{{ url_for('about_me', username=blog.author.Username) }}">{{ blog.author.Username }}</a> |
