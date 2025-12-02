@@ -232,6 +232,11 @@ def blog_display():
             ).all()
             return render_template('blog_display.html', blogs=blogs, edit_id=edit_id)
 
+        user = Users.query.filter(Users.Username.ilike(search_term)).first()
+        if user:
+            blogs = Blogs.query.filter_by(UserID=user.id).all()
+            return render_template('blog_display.html', blogs=blogs, edit_id=edit_id)
+
         # Fallback: partial match (like before)
         blogs = Blogs.query.join(Categoryship).join(Categories).filter(
             db.or_(
@@ -452,7 +457,7 @@ def edit_portfolio(portfolio_id):
             portfolio.ImagePath = filename
 
         db.session.commit()
-        return redirect(url_for('portfolio_display'))
+        return redirect(url_for('about_me', username=current_user.Username))
 
     return render_template('edit_portfolio.html', portfolio=portfolio)
 
@@ -467,7 +472,8 @@ def delete_portfolio(portfolio_id):
         flash('Blog Deleted.', 'success')
     else:
         flash('You are not authorized to delete this portfolio.', 'danger')
-    return redirect(url_for('about_me'), username=current_user.Username)
+        
+    return redirect(url_for('about_me', username=current_user.Username))
 
 @app.route('/analytics')
 @login_required

@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+
 {% block content %}
     <h2>Blogs</h2>
     <form method="GET" action="{{url_for('blog_display')}}">
-        <input type="text" name="query" placeholder="Search for blogs or tags">
+        <input type="text" id="query" name="query" class="search-bar" placeholder="Search for blogs, authors, and tags">
         <button type="Submit">Search</button>
     </form>
     <br>
@@ -41,7 +42,7 @@
                     <p>No images were found for this post.</p>
                 {%endif%}
                 <h3>Blog Contents:</h3>
-                    <p>{{ blog.BlogContents }}</p>
+                    <p>{{ blog.BlogContents | replace('\n', '<br>') | safe }}</p>
                 <h3>Comments</h3>
                 <ul>
                     {% if current_user.is_authenticated %}
