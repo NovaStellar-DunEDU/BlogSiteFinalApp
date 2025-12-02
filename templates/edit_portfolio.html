@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Edit Portfolio Entry</h2>
+<form method="POST" enctype="multipart/form-data">
+    <label>Title:</label><br>
+    <input type="text" name="title" value="{{ portfolio.Title }}" required><br><br>
+
+    <label>Description:</label><br>
+    <textarea name="description" required>{{ portfolio.Description }}</textarea><br><br>
+
+    <label>Code Snippet (optional):</label><br>
+    <textarea name="code" rows="10" cols="60">{{ portfolio.CodeSnippet }}</textarea><br><br>
+
+    <label>Image (optional):</label><br>
+    {% if portfolio.ImagePath %}
+        <img src="{{ url_for('static', filename='uploads/' ~ portfolio.ImagePath) }}" style="max-width:200px;"><br>
+    {% endif %}
+    <input type="file" name="image"><br><br>
+
+    <button type="submit">Save Changes</button>
+</form>
+{% endblock %}

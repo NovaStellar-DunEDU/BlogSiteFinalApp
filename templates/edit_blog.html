@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Edit Blog</h2>
+
+<form method="POST" action="{{ url_for('edit_blog', blog_id=blog.BlogID) }}" enctype="multipart/form-data">
+
+    <label for="BlogName">Title:</label><br>
+    <input type="text" name="BlogName" value="{{ blog.BlogName }}" required><br><br>
+
+    <label for="BlogContents">Content:</label><br>
+    <textarea name="BlogContents" rows="10" cols="80" required>{{ blog.BlogContents }}</textarea><br><br>
+
+    <label for="CategoryID">Categories:</label><br>
+    {% for category in categories %}
+        <input type="checkbox" name="CategoryID" value="{{ category.CategoryID }}" {% if category.CategoryID in selected_category_ids %}checked{% endif %}>  {{ category.CategoryName }} </option>
+        <br>
+    {% endfor %}
+    <br>
+
+    <label for="image">Upload New Image:</label><br>
+    <input type="file" name="image"><br><br>
+
+    {% if blog.image_paths %}
+    <p>Current Images:</p>
+    {% for image in blog.image_paths %}
+        <img src="{{ url_for('static', filename='bloguploads/' ~ image.filename) }}" width="200"><br>
+    {% endfor %}
+    {% endif %}
+
+    <button type="submit">Update Blog</button>
+</form>
+{% endblock %}

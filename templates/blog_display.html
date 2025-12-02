@@ -13,8 +13,18 @@
                 <h2>
                     {{ blog.BlogName }}
                 </h2>
+            </div>
                 <ul>
-                    <li><h3>Written by <a href="{{ url_for('about_me', username=blog.author.Username) }}">{{ blog.author.Username }}</a></h3></li>
+                    <li>
+                        <h3>Written by <a href="{{ url_for('about_me', username=blog.author.Username) }}">{{ blog.author.Username }}</a> |
+                            {% if current_user.id == blog.UserID or current_user.is_admin %}
+                                <a href="{{ url_for('edit_blog', blog_id=blog.BlogID) }}">Edit</a>
+                                    <form method="POST" action="{{ url_for('delete_blog', id=blog.BlogID) }}" style="display:inline;">
+                                        <button type="submit">Delete</button>
+                                    </form>
+                            {% endif %}
+                        </h3>
+                    </li>
                 </ul>
                 <h3>Relevant Topics:</h3>
                 {% for categoryship in blog.categoryships %}
@@ -28,10 +38,10 @@
                     style="max-width:300px; height:auto; margin:10px;">
                 {% endfor %}
                 {%if not image in blog.image_paths%}
-                    <p>No images for this post.</p>
+                    <p>No images were found for this post.</p>
                 {%endif%}
                 <h3>Blog Contents:</h3>
-                <p>{{ blog.BlogContents }}</p>
+                    <p>{{ blog.BlogContents }}</p>
                 <h3>Comments</h3>
                 <ul>
                     {% if current_user.is_authenticated %}

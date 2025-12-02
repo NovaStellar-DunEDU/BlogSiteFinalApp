@@ -36,7 +36,7 @@
             <label>Select Relevant Categories, the content will be listed below:</label>
             {% for category in categories %}
                 <br>
-                <input type="checkbox" name="categoryID" value="{{ category.CategoryID }}"> {{ category.CategoryName }} </option>
+                <input type="checkbox" name="CategoryID" value="{{ category.CategoryID }}" {% if category.CategoryID in selected_category_ids %}checked{% endif %}> {{ category.CategoryName }} </option>
             {% endfor %}
         <br>
         <br>

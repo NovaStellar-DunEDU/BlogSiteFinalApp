@@ -7,14 +7,14 @@ import os
 from datetime import datetime
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
-
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+from flask_matomo2 import Matomo
 
 app = Flask(__name__)
+matomo = Matomo(
+    app,
+    matomo_url="http://localhost:8080/matomo",
+    id_site=1
+)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blogSite.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -87,6 +87,16 @@ class Categoryship(db.Model):
     BlogID = db.Column(db.Integer, db.ForeignKey('blogs.BlogID', ondelete='CASCADE'), nullable=False)
     CategoryID = db.Column(db.Integer, db.ForeignKey('categories.CategoryID'), nullable=False)
 
+class Portfolio(db.Model):
+    PortfolioID = db.Column(db.Integer, primary_key=True)
+    Title = db.Column(db.String(100), nullable=False)
+    Description = db.Column(db.Text, nullable=False)
+    CodeSnippet = db.Column(db.Text, nullable=True)  # Optional
+    ImagePath = db.Column(db.String, nullable=True)  # Optional
+    Timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    UserID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    author = db.relationship('Users', backref='portfolio')
+
 # Database end
 
 @app.route('/')
@@ -100,29 +110,48 @@ def about_me(username):
     picture = Pictures.query.filter_by(UserID=user.id).order_by(Pictures.PictureID.desc()).first()
     aboutme = AboutMe.query.filter_by(UserID=user.id).order_by(AboutMe.ProfileID.desc()).first()
     blogs = Blogs.query.filter_by(UserID=user.id).order_by(Blogs.Timestamp.desc()).all()
-    return render_template('about_me.html', user=user, aboutme=aboutme, blogs=blogs, picture=picture)
+    portfolios = Portfolio.query.order_by(Portfolio.Timestamp.desc()).all()
+    return render_template('about_me.html', user=user, aboutme=aboutme, blogs=blogs, picture=picture, portfolios=portfolios)
 
-@app.route('/aboutme/search/')
+@app.route('/aboutme/search/', methods=['GET', 'POST'])
 def profile_search():
-    #be able to search up a username and access their profile.
+    query = request.args.get('Usernames', '').strip().lower()
+    users = Users.query.all()
+    user_profiles = []
+    for user in users:
+        if query and query not in user.Username.lower():
+            continue
+        
+        aboutme = AboutMe.query.filter_by(UserID=user.id).order_by(AboutMe.ProfileID.desc()).first()
+        if aboutme and aboutme.Description:
+            sentences = aboutme.Description.strip().split('.')
+            short_description = '. '.join(sentences[:2]).strip()
+            if short_description and short_description[-1] not in '.?!':
+                short_description += '.'
+        else:
+            short_description = "This person does not have an about me yet."    
+        
+        user_profiles.append({'user': user, 'aboutme': aboutme, 'short_description': short_description})
     
-    pass
+    return render_template('profile_search.html', user_profiles=user_profiles, query=query)
 
 @app.route('/blog/add', methods=['GET', 'POST'])
 @login_required
 def add_blog():
     uploaded_filenames = []
-    categories_all = Categories.query.all()
+    selected_ids = []
+    categories_all = Categories.query.filter_by(UserID=current_user.id).all()
     if request.method == 'POST':
         if 'submit_category' in request.form:
             category_name = request.form.get('categoryName')
             if category_name:
                 new_category = Categories(
                     UserID=current_user.id,
-                    CategoryName = category_name
+                    CategoryName=category_name
                 )
                 db.session.add(new_category)
-                categories_all = Categories.query.all()
+                db.session.commit()
+                categories_all = Categories.query.filter_by(UserID=current_user.id).all()
                 return render_template('add_blog.html', categories=categories_all, previews=uploaded_filenames)
             
         elif 'submit_blog' in request.form:
@@ -130,46 +159,34 @@ def add_blog():
                 BlogName=request.form['blogname'],
                 BlogContents=request.form['blogcontents'],
                 UserID=current_user.id
-                )
+            )
             db.session.add(new_blog)
-            db.session.commit()
+            db.session.flush()  # Get BlogID
 
+            # Handle file uploads
             files = request.files.getlist('fileInput')
-            os.makedirs('./static/uploads', exist_ok=True)
             for file in files:
                 if file and file.filename:
                     filename = secure_filename(file.filename)
-                    upload_folder = os.path.join(app.root_path, 'static', 'uploads')
-                    os.makedirs(upload_folder, exist_ok=True)
-                    filepath = os.path.join(upload_folder, filename)
+                    filepath = os.path.join(app.root_path, 'static', 'uploads', filename)
                     try:
                         file.save(filepath)
+                        uploaded_filenames.append(filename)
+                        db.session.add(BlogImage(BlogID=new_blog.BlogID, filename=filename))
                     except Exception as e:
                         print("File save error:", e)
-                    uploaded_filenames.append(filename)
 
-                    new_image = BlogImage(
-                        BlogID=new_blog.BlogID,
-                        filename=filename
-                    )
-                    db.session.add(new_image)
+            valid_ids = {c.CategoryID for c in Categories.query.filter_by(UserID=current_user.id).all()}
+            selected_ids = request.form.getlist('CategoryID') if request.method == 'POST' else []
+            for CategoryID in selected_ids:
+                if int(CategoryID) in valid_ids:
+                    db.session.add(Categoryship(BlogID=new_blog.BlogID, CategoryID=int(CategoryID)))
                 else:
-                    print("Skip empty file input")
-                
-                db.session.commit()
+                    print(f"Invalid CategoryID: {CategoryID}")
 
-            selected_ids = request.form.getlist('categoryID')
-            for category_id in selected_ids:
-                new_categoryship = Categoryship(
-                    BlogID=new_blog.BlogID,
-                    CategoryID=int(category_id)
-                    )
-                db.session.add(new_categoryship)
-                db.session.commit()
-                
-            return render_template('add_blog.html', categories=categories_all, previews=uploaded_filenames)
-    return render_template('add_blog.html', categories=categories_all)
-
+            db.session.commit()
+            return redirect(url_for('blog_display', blog_id=new_blog.BlogID))
+    return render_template('add_blog.html', categories=categories_all, previews=uploaded_filenames, selected_ids=selected_ids)
 
 @app.route('/blogs/view', methods=['GET','POST'])
 def blog_display():
@@ -232,19 +249,6 @@ def blog_display():
 def blogs_display():
     blogs = Blogs.query.get_or_404(id)
     return render_template('blog_display.html', blogs=[blogs])
-
-@app.route('/blogs/<int:id>/edit', methods=['GET', 'POST'])
-@login_required
-def edit_blog(id):
-    blog = Blogs.query.get_or_404(id)
-    if blog.UserID != current_user.id and not current_user.is_admin:
-        abort(403)
-    if request.method == 'POST':
-        blog.Title = request.form['title']
-        blog.Content = request.form['content']
-        db.session.commit()
-        return redirect(url_for('profile', username=current_user.Username))
-    return render_template('edit_blog.html', blog=blog)
 
 @app.route('/blogs/<int:id>/delete', methods=['POST'])
 @login_required
@@ -378,6 +382,97 @@ def settings():
         
     aboutme = AboutMe.query.filter_by(UserID=current_user.id).order_by(AboutMe.ProfileID.desc()).first()
     return render_template('settings.html', aboutme=aboutme, savedfiles=savedfiles)
+
+@app.route('/edit_blog/<int:blog_id>', methods=['GET', 'POST'])
+@login_required
+def edit_blog(blog_id):
+    blog = Blogs.query.get_or_404(blog_id)
+    categories = Categories.query.filter_by(UserID=current_user.id).all()
+    selected_category_ids = [cs.CategoryID for cs in blog.categoryships]
+
+    if request.method == 'POST' and 'submit_blog' in request.form:
+        blog.BlogName = request.form['BlogName']
+        blog.BlogContents = request.form['BlogContents']
+        
+        Categoryship.query.filter_by(BlogID=blog.BlogID).delete(synchronize_session=False)
+        
+        selected_ids = request.form.getlist('CategoryID')
+        for cat_id in selected_ids:
+            db.session.add(Categoryship(BlogID=blog.BlogID, CategoryID=int(cat_id)))
+            db.session.commit()
+        return redirect(url_for('blog_display', blog_id=blog.BlogID))
+    return render_template('edit_blog.html', blog=blog, categories=categories, selected_category_ids=selected_category_ids)
+
+@app.route('/portfolio/add', methods=['GET', 'POST'])
+@login_required
+def add_portfolio():
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        code = request.form.get('code')
+        image = request.files.get('image')
+
+        image_path = None
+        if image and image.filename != '':
+            filename = secure_filename(image.filename)
+            image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            image_path = filename
+
+        new_portfolio = Portfolio(
+            Title=title,
+            Description=description,
+            CodeSnippet=code,
+            ImagePath=image_path,
+            UserID=current_user.id
+        )
+        db.session.add(new_portfolio)
+        db.session.commit()
+        return redirect(url_for('about_me', username=current_user.Username))
+
+    return render_template('add_portfolio.html')
+
+@app.route('/portfolio/edit/<int:portfolio_id>', methods=['GET', 'POST'])
+@login_required
+def edit_portfolio(portfolio_id):
+    portfolio = Portfolio.query.get_or_404(portfolio_id)
+
+    # Only allow owner or admin
+    if portfolio.UserID != current_user.id and not current_user.is_admin:
+        abort(403)
+
+    if request.method == 'POST':
+        portfolio.Title = request.form['title']
+        portfolio.Description = request.form['description']
+        portfolio.CodeSnippet = request.form.get('code')
+
+        image = request.files.get('image')
+        if image and image.filename != '':
+            filename = secure_filename(image.filename)
+            image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            portfolio.ImagePath = filename
+
+        db.session.commit()
+        return redirect(url_for('portfolio_display'))
+
+    return render_template('edit_portfolio.html', portfolio=portfolio)
+
+@app.route('/portfolio/delete/<int:portfolio_id>', methods=['POST'])
+@login_required
+def delete_portfolio(portfolio_id):
+    portfolio = Portfolio.query.get_or_404(portfolio_id)
+
+    if portfolio.UserID == current_user.id or current_user.IsAdmin:
+        db.session.delete(portfolio)
+        db.session.commit()
+        flash('Blog Deleted.', 'success')
+    else:
+        flash('You are not authorized to delete this portfolio.', 'danger')
+    return redirect(url_for('about_me'), username=current_user.Username)
+
+@app.route('/analytics')
+@login_required
+def analytics():
+    return render_template('analytics.html')
 
 # Create DB if not exists
 with app.app_context():

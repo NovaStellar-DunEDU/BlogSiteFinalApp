@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<hr>
+<h2>Add Portfolio Entry</h2>
+<form method="POST" enctype="multipart/form-data">
+    <label>Title:</label><br>
+    <input type="text" name="title" required><br><br>
+
+    <label>Description:</label><br>
+    <textarea name="description" required></textarea><br><br>
+
+    <label>Code Snippet (optional):</label><br>
+    <textarea name="code" rows="10" cols="60"></textarea><br><br>
+
+    <label>Image (optional):</label><br>
+    <input type="file" name="image"><br><br>
+
+    <button type="submit">Create New Entry</button>
+</form>
+<br>
+<hr>
+{% endblock %}

@@ -1,4 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
-    
+    <h2>Existing Users</h2>
+    <form method="get" action="{{ url_for('profile_search') }}">
+        <input type="text" name="Usernames" placeholder="Search usernames..." value="{{ query }}">
+        <button type="submit">Search</button>
+    </form>
+    <br>
+    {% for pair in user_profiles %}
+    <hr>
+        <h3 style="font-size: 1.3em;"><a href="{{ url_for('about_me', username=pair.user.Username) }}">{{pair.user.Username}}</a></h3>
+        <ul>
+            <li>{{ pair.short_description if pair.aboutme or pair.short_description else "This person does not have an about me yet." }}</li>
+        </ul>
+    <hr>
+    {% endfor %}
+    {% if user_profiles|length == 0 %}
+        <p>No users found matching "{{ query }}".</p>
+    {% endif %}
 {% endblock %}
