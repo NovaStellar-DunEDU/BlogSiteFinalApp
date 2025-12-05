@@ -91,8 +91,8 @@ class Portfolio(db.Model):
     PortfolioID = db.Column(db.Integer, primary_key=True)
     Title = db.Column(db.String(100), nullable=False)
     Description = db.Column(db.Text, nullable=False)
-    CodeSnippet = db.Column(db.Text, nullable=True)  # Optional
-    ImagePath = db.Column(db.String, nullable=True)  # Optional
+    CodeSnippet = db.Column(db.Text, nullable=True)
+    ImagePath = db.Column(db.String, nullable=True)
     Timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     UserID = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     author = db.relationship('Users', backref='portfolio')
@@ -161,9 +161,8 @@ def add_blog():
                 UserID=current_user.id
             )
             db.session.add(new_blog)
-            db.session.flush()  # Get BlogID
+            db.session.flush()
 
-            # Handle file uploads
             files = request.files.getlist('fileInput')
             for file in files:
                 if file and file.filename:
@@ -219,12 +218,10 @@ def blog_display():
     edit_id = request.args.get('edit_id', type=int)
 
     if search_term:
-        # First try exact match on blog name
         blog = Blogs.query.filter(Blogs.BlogName.ilike(search_term)).first()
         if blog:
             return render_template('blog_display.html', blogs=[blog], edit_id=edit_id)
 
-        # Otherwise, try exact match on category name
         category = Categories.query.filter(Categories.CategoryName.ilike(search_term)).first()
         if category:
             blogs = Blogs.query.join(Categoryship).filter(
@@ -237,7 +234,6 @@ def blog_display():
             blogs = Blogs.query.filter_by(UserID=user.id).all()
             return render_template('blog_display.html', blogs=blogs, edit_id=edit_id)
 
-        # Fallback: partial match (like before)
         blogs = Blogs.query.join(Categoryship).join(Categories).filter(
             db.or_(
                 Blogs.BlogName.ilike(f'%{search_term}%'),
@@ -246,7 +242,6 @@ def blog_display():
         ).distinct().all()
         return render_template('blog_display.html', blogs=blogs, edit_id=edit_id)
 
-    # Default: show all blogs
     blogs = Blogs.query.all()
     return render_template('blog_display.html', blogs=blogs, edit_id=edit_id)
 
@@ -307,7 +302,7 @@ def login():
         if user and check_password_hash(user.Password, Password):
             login_user(user)
             flash('Logged in successfully!', 'success')
-            return redirect(url_for('blog_display'))  # or user dashboard
+            return redirect(url_for('blog_display'))
         else:
             flash('Invalid username or password.', 'danger')
 
@@ -343,7 +338,7 @@ def sign_up():
 def logout():
     logout_user()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('login'))  # or redirect to homepage
+    return redirect(url_for('login'))
 
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
@@ -441,7 +436,6 @@ def add_portfolio():
 def edit_portfolio(portfolio_id):
     portfolio = Portfolio.query.get_or_404(portfolio_id)
 
-    # Only allow owner or admin
     if portfolio.UserID != current_user.id and not current_user.is_admin:
         abort(403)
 
@@ -480,7 +474,6 @@ def delete_portfolio(portfolio_id):
 def analytics():
     return render_template('analytics.html')
 
-# Create DB if not exists
 with app.app_context():
     db.create_all()
 

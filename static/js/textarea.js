@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const computed = getComputedStyle(textarea);
             ctx.font = computed.font;
 
-            // Measure text width
             const text = textarea.value || textarea.placeholder || "";
             const textWidth = ctx.measureText(text).width;
 
@@ -27,7 +26,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             textarea.style.width = finalWidth + "px";
 
-            // Expand width first
             if (finalWidth >= maxW) {
                 textarea.style.height = "auto";
                 textarea.style.height = textarea.scrollHeight + "px";
@@ -39,6 +37,6 @@ document.addEventListener("DOMContentLoaded", function () {
     textarea.addEventListener("input", resize);
     window.addEventListener("resize", resize);
 
-    resize(); // initialize
+    resize();
     });
 });
