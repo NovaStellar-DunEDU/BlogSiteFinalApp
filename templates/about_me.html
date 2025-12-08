@@ -8,11 +8,11 @@
                 <img src="{{ url_for('static', filename='profileuploads/' ~ picture.FileNamePFP) }}" alt="Profile Picture" id="PFP" name="PFP" 
                 style="border: 5px solid #272727ff; border-radius: 60%; max-width: 160px; max-height: 160px; height: 160px; width: 180px;">
             {% else %}
-                <p>No profile picture yet.</p>
+                <p style="color: wheat;">No profile picture yet.</p>
             {% endif %}
         </section>
             {% if aboutme %}
-                <p style="padding: 10px;">{{ aboutme.Description | replace('\n', '<br>') | safe }}</p>
+                <p style="padding: 10px; font-size:18px;">{{ aboutme.Description | replace('\n', '<br>') | safe }}</p>
             {% else %}
                 <p>No bio yet. Go and <a href="{{ url_for('settings') }}">create</a> one!</p>
             {% endif %}
